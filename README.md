@@ -19,8 +19,8 @@ This project uses the YOLOv4-tiny model to detect if a person is present within 
 ### Installation
 1. Clone the repository:
    ```sh
-   git clone <repository-url>
-   cd <repository-folder>
+   git clone https://github.com/shoaibhr/computer-vision
+   cd computer-vision
    ```
 
 2. Install the required Python packages:
