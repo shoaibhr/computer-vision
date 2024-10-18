@@ -1,5 +1,29 @@
 import cv2
 import numpy as np
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get the RTSP URL from environment variables
+rtsp_url = os.getenv("RTSP_URL")
+
+# Ensure RTSP_URL is provided
+if not rtsp_url:
+    print("RTSP URL not found. Please set RTSP_URL in your .env file.")
+    exit()
+    
+# Get ROI coordinates from environment variables
+roi_x1 = int(os.getenv("ROI_X1", 0))
+roi_y1 = int(os.getenv("ROI_Y1", 0))
+roi_x2 = int(os.getenv("ROI_X2", 0))
+roi_y2 = int(os.getenv("ROI_Y2", 0))
+
+# Ensure ROI is correctly defined
+if roi_x1 == 0 and roi_y1 == 0 and roi_x2 == 0 and roi_y2 == 0:
+    print("ROI coordinates not found. Please set ROI_X1, ROI_Y1, ROI_X2, ROI_Y2 in your .env file.")
+    exit()
 
 """ 
 Function to retrieve video feed from the specified URL and perform object detection using YOLO model to detect if a person is present within a specified Region of Interest (ROI).
@@ -114,5 +138,4 @@ def get_stream(url):
 
 if __name__ == "__main__":
     # Replace this with your actual RTSP URL
-    rtsp_url = "rtsp://admin:EIYTCA@192.168.1.5:554/Streaming/Channels/102"
     get_stream(rtsp_url)
