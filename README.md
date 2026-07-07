@@ -21,6 +21,8 @@ dock, or restricted area.
 
 ## Features
 
+- **Any video source** — USB webcams, laptop cameras, `/dev/video*` devices, RTSP/HTTP network cameras, video files, GStreamer pipelines, or `auto` to just use the first camera found
+- **Draw zones with your mouse** — an interactive picker opens on the live feed; no guessing pixel coordinates
 - **Multiple named zones** — watch the entrance and the loading dock at once
 - **Debounced events** — enter/exit fire on sustained presence, not one-frame flickers
 - **Webhook notifications** — JSON `POST` on every event, ready for Home Assistant, n8n, Slack bridges, or your own backend
@@ -40,10 +42,24 @@ git clone https://github.com/shoaibhr/computer-vision
 cd computer-vision
 pip install .
 
-# Watch your webcam, alert when someone enters the left half of a 640x480 frame
-zonewatch --source 0 --zone "desk:0,0,320,480"
+# Use the first camera it finds; draw your zones with the mouse
+zonewatch --source auto
+```
 
-# Watch an RTSP camera headless, with webhook alerts
+That's it. When no zones are configured, ZoneWatch opens the video and lets
+you **drag rectangles directly on the live feed** — no coordinate guessing.
+Press ENTER and the zones are saved to `.env` and watching begins; every
+later run reuses them.
+
+More examples:
+
+```sh
+zonewatch --list-sources          # see which cameras are connected
+
+# A specific webcam, redrawing zones over the ones saved earlier
+zonewatch --source 1 --select-zones
+
+# An RTSP camera headless on a server, with webhook alerts
 zonewatch --source "rtsp://user:pass@192.168.1.10:554/Streaming/Channels/102" \
           --zone "entrance:118,6,218,206" \
           --webhook-url "https://example.com/hooks/zonewatch" \
@@ -52,6 +68,20 @@ zonewatch --source "rtsp://user:pass@192.168.1.10:554/Streaming/Channels/102" \
 
 Press `q` in the preview window to quit. On first run the YOLOv4-tiny model
 (~24 MB) is downloaded to `~/.cache/zonewatch/`.
+
+### Video sources
+
+`--source` (or `SOURCE` in `.env`) accepts anything OpenCV can read:
+
+| Source | Example |
+|---|---|
+| First working camera | `auto` |
+| USB / laptop camera index | `0`, `1`, ... (discover with `--list-sources`) |
+| Linux camera device | `/dev/video0` |
+| RTSP network camera | `rtsp://user:pass@192.168.1.10:554/...` (TCP transport is used automatically for reliability) |
+| HTTP / MJPEG stream | `http://cam.local/mjpeg` |
+| Video file | `recording.mp4` |
+| GStreamer pipeline | `"v4l2src ! videoconvert ! appsink"` |
 
 For higher accuracy, install the Ultralytics backend:
 
@@ -67,8 +97,10 @@ Every option can be set as a CLI flag or an environment variable (a local
 
 | CLI flag | Env var | Default | Description |
 |---|---|---|---|
-| `--source` | `SOURCE` (or legacy `RTSP_URL`) | — | RTSP URL, webcam index, or video file path |
-| `--zone` (repeatable) | `ZONES` (`;`-separated) | — | Zone as `name:x1,y1,x2,y2` |
+| `--source` | `SOURCE` (or legacy `RTSP_URL`) | — | Camera index, `auto`, `/dev/videoN`, RTSP/HTTP URL, file, or GStreamer pipeline |
+| `--list-sources` | — | — | Scan for connected cameras and exit |
+| `--zone` (repeatable) | `ZONES` (`;`-separated) | — | Zone as `name:x1,y1,x2,y2`; omit to draw zones interactively |
+| `--select-zones` | — | — | Open the interactive zone picker even if zones are already configured |
 | `--backend` | `BACKEND` | `opencv` | `opencv` or `ultralytics` |
 | `--model` | `MODEL` | `yolov8n.pt` | Ultralytics model name/path |
 | `--confidence` | `CONFIDENCE` | `0.5` | Minimum detection confidence (0–1) |
@@ -113,13 +145,25 @@ docker build -t zonewatch .
 docker run --env-file .env zonewatch
 ```
 
-## Picking zone coordinates
+## Drawing zones
 
-Zones are pixel rectangles in the frame: `x1,y1` is the top-left corner,
-`x2,y2` the bottom-right. Run ZoneWatch once with a preview window (or grab a
-frame with `ffmpeg -i rtsp://... -frames:v 1 frame.jpg`) and read coordinates
-off the image in any viewer. In the preview, zones are drawn blue when clear
-and red while occupied.
+Run `zonewatch --select-zones` (or just start with no zones configured) and
+draw on the live video:
+
+| Action | Effect |
+|---|---|
+| click + drag | draw a zone |
+| `space` | pause / resume the video while drawing |
+| `u` | undo the last zone |
+| `r` | remove all zones |
+| `ENTER` or `s` | save zones to `.env` and start watching |
+| `q` or `ESC` | cancel |
+
+Zones are saved as a `ZONES=` line in `.env`, so they survive restarts. On a
+headless server, set `ZONES` manually (pixel rectangles as
+`name:x1,y1,x2,y2`, top-left and bottom-right corners) or draw them once on
+a desktop and copy the `.env` line over. In the watch preview, zones are
+drawn blue when clear and red while occupied.
 
 ## Development
 

@@ -28,6 +28,11 @@ class Zone:
         return bx2 > self.x1 and bx1 < self.x2 and by2 > self.y1 and by1 < self.y2
 
 
+def zones_to_spec(zones: list[Zone]) -> str:
+    """Serialize zones back into the ``parse_zones`` string format."""
+    return ";".join(f"{z.name}:{z.x1},{z.y1},{z.x2},{z.y2}" for z in zones)
+
+
 def parse_zones(spec: str) -> list[Zone]:
     """Parse a zone spec string into a list of zones.
 

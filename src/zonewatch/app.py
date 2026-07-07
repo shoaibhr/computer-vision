@@ -98,7 +98,15 @@ def run(settings: Settings) -> None:
                 hub.dispatch(event, annotated)
 
             if not settings.headless:
-                cv2.imshow("ZoneWatch", annotated)
+                try:
+                    cv2.imshow("ZoneWatch", annotated)
+                except cv2.error:
+                    logger.warning(
+                        "No GUI support in this OpenCV build/environment; "
+                        "continuing headless"
+                    )
+                    settings.headless = True
+                    continue
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     logger.info("Quit requested")
                     break

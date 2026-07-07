@@ -77,9 +77,19 @@ def test_missing_source_rejected():
         load_settings(env={"ZONES": "a:1,1,2,2"})
 
 
-def test_missing_zones_rejected():
-    with pytest.raises(ValueError, match="zone"):
-        load_settings(env={"SOURCE": "rtsp://cam"})
+def test_missing_zones_allowed_for_interactive_picker():
+    settings = load_settings(env={"SOURCE": "rtsp://cam"})
+    assert settings.zones == []
+
+
+def test_device_path_becomes_index():
+    settings = load_settings(env={**BASE_ENV, "SOURCE": "/dev/video2"})
+    assert settings.source == 2
+
+
+def test_auto_source_passes_through():
+    settings = load_settings(env={**BASE_ENV, "SOURCE": "Auto"})
+    assert settings.source == "auto"
 
 
 def test_bad_backend_rejected():
