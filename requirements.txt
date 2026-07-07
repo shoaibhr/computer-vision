@@ -1,3 +1,5 @@
-opencv-python
-numpy
-python-dotenv
+# Prefer `pip install .` (or `pip install .[yolo]` for the Ultralytics backend).
+# This file is kept for users who install dependencies directly.
+opencv-python>=4.8
+numpy>=1.24
+python-dotenv>=1.0
