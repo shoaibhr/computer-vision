@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .zones import Zone, parse_zones
+from .zones import Zone, parse_zones, zones_to_spec
 
 _TRUTHY = {"1", "true", "yes", "on"}
+
+AUTO_SOURCE = "auto"
 
 
 @dataclass
@@ -28,8 +31,8 @@ class Settings:
     log_level: str = "INFO"
 
     def __post_init__(self) -> None:
-        if not self.zones:
-            raise ValueError("At least one detection zone is required (set ZONES or --zone)")
+        # Note: zones may legitimately be empty here; the CLI launches the
+        # interactive zone picker when none are configured.
         if self.backend not in ("opencv", "ultralytics"):
             raise ValueError(f"Unknown backend '{self.backend}' (expected opencv or ultralytics)")
         if not 0.0 < self.confidence <= 1.0:
@@ -44,9 +47,45 @@ class Settings:
             raise ValueError(f"Duplicate zone names: {', '.join(sorted(dupes))}")
 
 
-def _coerce_source(raw: str) -> str | int:
-    """Webcam indexes are given as bare integers; everything else is a URL/path."""
-    return int(raw) if raw.isdigit() else raw
+def parse_source(raw: str) -> str | int:
+    """Normalize a user-supplied source into what VideoStream expects.
+
+    - ``"0"``, ``"1"``, ... -> camera index (USB webcam, laptop camera)
+    - ``"/dev/video2"``     -> camera index 2 (Linux V4L2 device path)
+    - ``"auto"``            -> probe and use the first working camera
+    - anything else (rtsp/http/https URL, GStreamer pipeline, file path)
+      is passed through unchanged.
+    """
+    raw = raw.strip()
+    if raw.isdigit():
+        return int(raw)
+    device = re.fullmatch(r"/dev/video(\d+)", raw)
+    if device:
+        return int(device.group(1))
+    if raw.lower() == AUTO_SOURCE:
+        return AUTO_SOURCE
+    return raw
+
+
+def save_zones_to_env(zones: list[Zone], path: Path) -> str:
+    """Persist zones as a ZONES= line in a .env file, preserving other lines.
+
+    Returns the spec string that was written.
+    """
+    spec = zones_to_spec(zones)
+    lines: list[str] = []
+    if path.is_file():
+        lines = path.read_text().splitlines()
+    replaced = False
+    for i, line in enumerate(lines):
+        if line.lstrip().startswith("ZONES="):
+            lines[i] = f"ZONES={spec}"
+            replaced = True
+            break
+    if not replaced:
+        lines.append(f"ZONES={spec}")
+    path.write_text("\n".join(lines) + "\n")
+    return spec
 
 
 def _zones_from_env(env: dict) -> list[Zone]:
@@ -73,7 +112,7 @@ def load_settings(env: dict | None = None, **overrides) -> Settings:
     values: dict = {}
     source = env.get("SOURCE") or env.get("RTSP_URL")
     if source:
-        values["source"] = _coerce_source(source)
+        values["source"] = parse_source(source)
     zones = _zones_from_env(env)
     if zones:
         values["zones"] = zones
