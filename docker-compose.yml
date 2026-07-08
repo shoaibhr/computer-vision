@@ -1,0 +1,13 @@
+services:
+  zonewatch:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HEADLESS: "true"
+    volumes:
+      - model-cache:/root/.cache/zonewatch
+      - ./snapshots:/app/snapshots
+
+volumes:
+  model-cache:

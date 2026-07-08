@@ -1,0 +1,30 @@
+# Secrets / local config
+.env
+
+# Model artifacts
+models/
+*.weights
+*.pt
+*.onnx
+yolov4-tiny.cfg
+coco.names
+
+# Output
+snapshots/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store

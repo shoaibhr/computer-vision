@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zonewatch"
+version = "1.1.0"
+description = "Zone-based person detection for RTSP cameras, webcams, and video files"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "shoaibhr" }]
+requires-python = ">=3.9"
+keywords = ["computer-vision", "yolo", "rtsp", "person-detection", "roi", "surveillance"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+]
+dependencies = [
+    "opencv-python>=4.8",
+    "numpy>=1.24",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+yolo = ["ultralytics>=8.1"]
+dev = ["pytest>=7.4", "ruff>=0.4"]
+
+[project.scripts]
+zonewatch = "zonewatch.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/shoaibhr/computer-vision"
+Issues = "https://github.com/shoaibhr/computer-vision/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
